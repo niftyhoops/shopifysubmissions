@@ -1,8 +1,15 @@
 const fetch = require('node-fetch');
 
-exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+exports.handler = async function(event, context) {
+  if (event.httpMethod === "OPTIONS") {
+    return {
+      statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "POST, OPTIONS"
+      }
+    };
   }
 
   try {
@@ -18,10 +25,11 @@ exports.handler = async (event) => {
     }
 
     return {
-      statusCode: 200,
-      body: JSON.stringify({ message: "Success" }),
-    };
-  } catch (error) {
-    return { statusCode: 500, body: error.toString() };
-  }
+    statusCode: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ message: "Data processed" })
+  };
 };
