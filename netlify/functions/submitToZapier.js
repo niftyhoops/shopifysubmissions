@@ -183,12 +183,13 @@ exports.handler = async function(event, context) {
             const productConfig = body.productConfig;
             
             // Map the option IDs to their readable titles
-            const mappedConfig = Object.entries(productConfig).reduce((acc, [key, value]) => {
-                const optionTitle = optionMappings[key] || key; // Fallback to key if not mapped
-                const valueTitle = valueMappings[value] || value; // Fallback to value if not mapped
-                acc[optionTitle] = valueTitle;
-                return acc;
-            }, {});
+		const mappedConfig = Object.entries(productConfig).reduce((acc, [key, value]) => {
+	    // Attempt to map both the key (for option title) and value (for option value)
+		    const optionTitle = optionMappings[key] || `Product Config ${key.charAt(0).toUpperCase() + 		key.slice(1)}`; // Fallback to a formatted key
+	    const valueTitle = valueMappings[value] || value; // Fallback to value if not mapped
+	    acc[optionTitle] = valueTitle;
+	    return acc;
+	}, {});
 
             // Update the body with the mapped configuration
             body.productConfig = mappedConfig;
