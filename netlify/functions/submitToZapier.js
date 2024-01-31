@@ -1,5 +1,8 @@
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
+console.log("Original productConfig:", productConfig);
+console.log("Mapped productConfig:", mappedConfig);
+
 // Example mapping from the provided JSON
 const optionMappings = {
     // Length options
