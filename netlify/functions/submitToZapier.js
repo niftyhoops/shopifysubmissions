@@ -10,13 +10,15 @@ exports.handler = async function(event, context) {
         "Access-Control-Allow-Headers": "Content-Type",
         "Access-Control-Allow-Methods": "POST, OPTIONS"
       },
-      body: JSON.stringify({message: "CORS preflight response"})
+      body: JSON.stringify({ message: "CORS preflight response" })
     };
   }
 
   // Process POST request
   if (event.httpMethod === "POST") {
     try {
+      console.log("Received POST request with body:", event.body); // Log incoming request data
+
       const body = JSON.parse(event.body);
       const response = await fetch('https://hooks.zapier.com/hooks/catch/6939704/3qzeaip/', {
         method: 'POST',
@@ -28,6 +30,8 @@ exports.handler = async function(event, context) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
+      console.log("Forwarded data to Zapier and received response:", response); // Log response from Zapier
+
       return {
         statusCode: 200,
         headers: {
@@ -37,6 +41,8 @@ exports.handler = async function(event, context) {
         body: JSON.stringify({ message: "Data processed" })
       };
     } catch (error) {
+      console.error("Error in processing:", error); // Log any errors
+
       return {
         statusCode: 500,
         headers: {
@@ -54,6 +60,6 @@ exports.handler = async function(event, context) {
     headers: {
       "Access-Control-Allow-Origin": "*"
     },
-    body: JSON.stringify({message: "Method not allowed"})
+    body: JSON.stringify({ message: "Method not allowed" })
   };
 };
