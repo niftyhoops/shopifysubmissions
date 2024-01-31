@@ -1,8 +1,5 @@
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
-console.log("Original productConfig:", productConfig);
-console.log("Mapped productConfig:", mappedConfig);
-
 // Example mapping from the provided JSON
 const optionMappings = {
     // Length options
@@ -193,6 +190,10 @@ exports.handler = async function(event, context) {
 	    acc[optionTitle] = valueTitle;
 	    return acc;
 	}, {});
+
+            // Log the original and mapped configurations here, after they are defined
+            console.log("Original productConfig:", productConfig);
+            console.log("Mapped productConfig:", mappedConfig);
 
             // Update the body with the mapped configuration
             body.productConfig = mappedConfig;
