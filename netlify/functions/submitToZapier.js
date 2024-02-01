@@ -300,6 +300,16 @@ exports.handler = async function(event, context) {
 	    return acc;
 	}, {});
 
+    const configString = Object.entries(mappedConfig).reduce((acc, [key, value]) => {
+        return acc + `${key}: ${value}\n`; // Use '\n' for a new line between each key-value pair
+    }, '');
+
+    console.log("Concatenated Config String:", configString);
+
+    // Update the body with the concatenated configuration string
+    // Here you might choose to use a specific property to hold the string or replace the productConfig
+    body.configString = configString;
+
             // Log the original and mapped configurations here, after they are defined
             console.log("Original productConfig:", productConfig);
             console.log("Mapped productConfig:", mappedConfig);
