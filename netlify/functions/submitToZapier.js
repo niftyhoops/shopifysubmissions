@@ -272,8 +272,56 @@ const valueMappings = {
 
 };
 
-exports.handler = async function(event) {
-    if (event.httpMethod === "OPTIONS") {
+exports.handler = async function(event, context) {
+    if (event.httpMethod === "POST") {
+        try {
+            const body = JSON.parse(event.body);
+
+            // Extract 'productConfig' directly from 'body' and map to readable values
+            const configValuesOnly = Object.keys(body.productConfig).map(key => {
+                const value = body.productConfig[key];
+                return valueMappings[value] || `Unknown Config: ${value}`; // Directly map to value, fallback if not found
+            });
+
+            // Concatenate all readable values into one string, separated by new lines
+            const configString = configValuesOnly.join('\n');
+
+            console.log("Concatenated Config String (Values Only):", configString);
+
+            // Update the body to include only the concatenated string of option values
+            body.configString = configString;
+
+            // The rest of your fetch logic...
+            const response = await fetch('https://hooks.zapier.com/hooks/catch/6939704/3qzeaip/', {
+                method: 'POST',
+                body: JSON.stringify(body),
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return {
+                statusCode: 200,
+                headers: {
+                    "Access-Control-Allow-Origin": "*",
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ message: "Data processed successfully" })
+            };
+        } catch (error) {
+            return {
+                statusCode: 500,
+                headers: {
+                    "Access-Control-Allow-Origin": "*",
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ message: error.message })
+            };
+        }
+    } else if (event.httpMethod === "OPTIONS") {
+        // CORS preflight response
         return {
             statusCode: 200,
             headers: {
@@ -283,35 +331,13 @@ exports.handler = async function(event) {
             },
             body: JSON.stringify({message: "CORS preflight response"})
         };
-    }
-
-    if (event.httpMethod === "POST") {
-        const body = JSON.parse(event.body);
-
-        // Directly map the option IDs to their readable values
-        const configValuesOnly = Object.values(body.productConfig).map(value => valueMappings[value] || `Unknown Config: ${value}`);
-        const configString = configValuesOnly.join(', '); // Joining with ', ' for a comma-separated list
-
-        // Sending the configString within the body to Zapier
-        const response = await fetch('https://hooks.zapier.com/hooks/catch/6939704/3qzeaip/', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({configString})
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        return {
-            statusCode: 200,
-            headers: {"Access-Control-Allow-Origin": "*"},
-            body: JSON.stringify({message: "Data processed successfully", configString})
-        };
     } else {
+        // Method Not Allowed
         return {
             statusCode: 405,
-            headers: {"Access-Control-Allow-Origin": "*"},
+            headers: {
+                "Access-Control-Allow-Origin": "*"
+            },
             body: JSON.stringify({message: "Method not allowed"})
         };
     }
