@@ -305,24 +305,24 @@ exports.handler = async function(event, context) {
         try {
             const body = JSON.parse(event.body);
 
-            // Extract 'productConfig' directly from 'body' and map to readable values
-            const configValuesOnly = Object.keys(body.productConfig).map(key => {
-                const value = body.productConfig[key];
-                return valueMappings[value] || `Unknown Config: ${value}`; // Directly map to value, fallback if not found
+            // Assuming body.productConfig is an object where the value is the key to look up in valueMappings
+            let configValuesOnly = Object.values(body.productConfig).map(value => {
+                // Map each product config ID to its readable value using valueMappings
+                return valueMappings[value] || `Unknown Config: ${value}`; // Use the direct value or a fallback
             });
 
             // Concatenate all readable values into one string, separated by new lines
-            const configString = configValuesOnly.join('\n');
+            let configString = configValuesOnly.join('\n');
 
             console.log("Concatenated Config String (Values Only):", configString);
 
-            // Update the body to include only the concatenated string of option values
-            body.configString = configString;
+            // Assuming you want to do something with configString next, like sending it in a response or to another service
+            // Update the request body or prepare the data to be sent to another service here
+            // This example simply logs the result and sends a placeholder response
 
-            // The rest of your fetch logic...
             const response = await fetch('https://hooks.zapier.com/hooks/catch/6939704/3qzeaip/', {
                 method: 'POST',
-                body: JSON.stringify(body),
+                body: JSON.stringify({configString: configString}), // Send the configString as part of the request
                 headers: { 'Content-Type': 'application/json' },
             });
 
@@ -349,7 +349,7 @@ exports.handler = async function(event, context) {
             };
         }
     } else if (event.httpMethod === "OPTIONS") {
-        // CORS preflight response
+        // Handle CORS preflight
         return {
             statusCode: 200,
             headers: {
@@ -357,19 +357,21 @@ exports.handler = async function(event, context) {
                 "Access-Control-Allow-Headers": "Content-Type",
                 "Access-Control-Allow-Methods": "POST, OPTIONS"
             },
-            body: JSON.stringify({message: "CORS preflight response"})
+            body: JSON.stringify({ message: "CORS preflight response" })
         };
     } else {
-        // Method Not Allowed
+        // Handle unsupported HTTP methods
         return {
             statusCode: 405,
             headers: {
                 "Access-Control-Allow-Origin": "*"
             },
-            body: JSON.stringify({message: "Method not allowed"})
+            body: JSON.stringify({ message: "Method not allowed" })
         };
     }
 };
+
+
 
 
             // Log the original and mapped configurations here, after they are defined
