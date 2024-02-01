@@ -301,39 +301,25 @@ exports.handler = async function(event, context) {
 	}, {});
 
 exports.handler = async function(event, context) {
-    if (event.httpMethod === "OPTIONS") {
-        return {
-            statusCode: 200,
-            headers: {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Headers": "Content-Type",
-                "Access-Control-Allow-Methods": "POST, OPTIONS"
-            },
-            body: JSON.stringify({message: "CORS preflight response"})
-        };
-    }
-
     if (event.httpMethod === "POST") {
         try {
             const body = JSON.parse(event.body);
 
-            // Ensure 'productConfig' is only declared once and used directly from 'body'
-            const configValuesOnly = Object.entries(body.productConfig).reduce((acc, [key, value]) => {
-                // Look up the value directly in valueMappings
-                const valueTitle = valueMappings[value] || `Unknown Config: ${value}`; // Use fallback if not mapped
-                acc.push(valueTitle); // Add the value title to the accumulator
-                return acc;
-            }, []);
+            // Extract 'productConfig' directly from 'body' and map to readable values
+            const configValuesOnly = Object.keys(body.productConfig).map(key => {
+                const value = body.productConfig[key];
+                return valueMappings[value] || `Unknown Config: ${value}`; // Directly map to value, fallback if not found
+            });
 
-            // Concatenate all values into one string
-            const configString = configValuesOnly.join('\n'); // Use '\n' for a new line between each value
+            // Concatenate all readable values into one string, separated by new lines
+            const configString = configValuesOnly.join('\n');
 
             console.log("Concatenated Config String (Values Only):", configString);
 
-            // Update the body to include the concatenated configuration string of values only
+            // Update the body to include only the concatenated string of option values
             body.configString = configString;
 
-            // Prepare the body for the fetch request
+            // The rest of your fetch logic...
             const response = await fetch('https://hooks.zapier.com/hooks/catch/6939704/3qzeaip/', {
                 method: 'POST',
                 body: JSON.stringify(body),
@@ -362,16 +348,27 @@ exports.handler = async function(event, context) {
                 body: JSON.stringify({ message: error.message })
             };
         }
+    } else if (event.httpMethod === "OPTIONS") {
+        // CORS preflight response
+        return {
+            statusCode: 200,
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "Content-Type",
+                "Access-Control-Allow-Methods": "POST, OPTIONS"
+            },
+            body: JSON.stringify({message: "CORS preflight response"})
+        };
+    } else {
+        // Method Not Allowed
+        return {
+            statusCode: 405,
+            headers: {
+                "Access-Control-Allow-Origin": "*"
+            },
+            body: JSON.stringify({message: "Method not allowed"})
+        };
     }
-
-    // If not OPTIONS or POST, return Method Not Allowed
-    return {
-        statusCode: 405, // Method Not Allowed
-        headers: {
-            "Access-Control-Allow-Origin": "*"
-        },
-        body: JSON.stringify({message: "Method not allowed"})
-    };
 };
 
 
