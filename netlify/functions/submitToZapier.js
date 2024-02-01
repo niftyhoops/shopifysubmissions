@@ -301,28 +301,35 @@ exports.handler = async function(event, context) {
 	}, {});
 
 exports.handler = async function(event, context) {
-    if (event.httpMethod === "POST") {
+    if (event.httpMethod === "OPTIONS") {
+        // CORS preflight response
+        return {
+            statusCode: 200,
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "Content-Type",
+                "Access-Control-Allow-Methods": "POST, OPTIONS"
+            },
+            body: JSON.stringify({message: "CORS preflight response"})
+        };
+    } else if (event.httpMethod === "POST") {
         try {
             const body = JSON.parse(event.body);
 
-            // Assuming body.productConfig is an object where the value is the key to look up in valueMappings
-            let configValuesOnly = Object.values(body.productConfig).map(value => {
-                // Map each product config ID to its readable value using valueMappings
-                return valueMappings[value] || `Unknown Config: ${value}`; // Use the direct value or a fallback
+            // Mapping 'productConfig' values to their readable descriptions
+            const configValuesOnly = Object.values(body.productConfig).map(value => {
+                return valueMappings[value] || `Unknown Config: ${value}`; // Direct mapping, with fallback
             });
 
-            // Concatenate all readable values into one string, separated by new lines
-            let configString = configValuesOnly.join('\n');
-
+            // Concatenate readable values into a single string
+            const configString = configValuesOnly.join('\n');
             console.log("Concatenated Config String (Values Only):", configString);
 
-            // Assuming you want to do something with configString next, like sending it in a response or to another service
-            // Update the request body or prepare the data to be sent to another service here
-            // This example simply logs the result and sends a placeholder response
-
+            // Sending only the concatenated string in the fetch request
+            const responsePayload = { configString: configString };
             const response = await fetch('https://hooks.zapier.com/hooks/catch/6939704/3qzeaip/', {
                 method: 'POST',
-                body: JSON.stringify({configString: configString}), // Send the configString as part of the request
+                body: JSON.stringify(responsePayload),
                 headers: { 'Content-Type': 'application/json' },
             });
 
@@ -336,9 +343,10 @@ exports.handler = async function(event, context) {
                     "Access-Control-Allow-Origin": "*",
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ message: "Data processed successfully" })
+                body: JSON.stringify({ message: "Data processed successfully", configString })
             };
         } catch (error) {
+            // Error handling
             return {
                 statusCode: 500,
                 headers: {
@@ -348,28 +356,19 @@ exports.handler = async function(event, context) {
                 body: JSON.stringify({ message: error.message })
             };
         }
-    } else if (event.httpMethod === "OPTIONS") {
-        // Handle CORS preflight
-        return {
-            statusCode: 200,
-            headers: {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Headers": "Content-Type",
-                "Access-Control-Allow-Methods": "POST, OPTIONS"
-            },
-            body: JSON.stringify({ message: "CORS preflight response" })
-        };
     } else {
-        // Handle unsupported HTTP methods
+        // Handle other HTTP methods
         return {
-            statusCode: 405,
+            statusCode: 405, // Method Not Allowed
             headers: {
                 "Access-Control-Allow-Origin": "*"
             },
-            body: JSON.stringify({ message: "Method not allowed" })
+            body: JSON.stringify({message: "Method not allowed"})
         };
     }
 };
+
+
 
 
 
