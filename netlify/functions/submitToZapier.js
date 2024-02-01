@@ -272,9 +272,21 @@ const valueMappings = {
 
 };
 
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+
+// Example mappings (trimmed for brevity)
+const optionMappings = {
+    // Your optionMappings here...
+};
+
+const valueMappings = {
+    // Your valueMappings here...
+    // "v_4029681": "30x96 Gothic Hoophouse",
+    // Add other value mappings...
+};
+
 exports.handler = async function(event, context) {
     if (event.httpMethod === "OPTIONS") {
-        // CORS preflight response
         return {
             statusCode: 200,
             headers: {
@@ -284,21 +296,23 @@ exports.handler = async function(event, context) {
             },
             body: JSON.stringify({message: "CORS preflight response"})
         };
-    } else if (event.httpMethod === "POST") {
+    }
+
+    if (event.httpMethod === "POST") {
         try {
             const body = JSON.parse(event.body);
 
-            // Mapping 'productConfig' values to their readable descriptions
+            // Mapping productConfig values to their readable descriptions
             const configValuesOnly = Object.values(body.productConfig).map(value => {
-                return valueMappings[value] || `Unknown Config: ${value}`; // Direct mapping, with fallback
+                return valueMappings[value] || `Unknown Config: ${value}`;
             });
 
             // Concatenate readable values into a single string
             const configString = configValuesOnly.join('\n');
-            console.log("Concatenated Config String (Values Only):", configString);
 
-            // Sending only the concatenated string in the fetch request
+            // Prepare the payload for the fetch request
             const responsePayload = { configString: configString };
+
             const response = await fetch('https://hooks.zapier.com/hooks/catch/6939704/3qzeaip/', {
                 method: 'POST',
                 body: JSON.stringify(responsePayload),
@@ -318,7 +332,6 @@ exports.handler = async function(event, context) {
                 body: JSON.stringify({ message: "Data processed successfully", configString })
             };
         } catch (error) {
-            // Error handling
             return {
                 statusCode: 500,
                 headers: {
@@ -329,7 +342,6 @@ exports.handler = async function(event, context) {
             };
         }
     } else {
-        // Handle other HTTP methods
         return {
             statusCode: 405, // Method Not Allowed
             headers: {
@@ -339,7 +351,6 @@ exports.handler = async function(event, context) {
         };
     }
 };
-
 
 
 
