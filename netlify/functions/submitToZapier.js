@@ -300,24 +300,79 @@ exports.handler = async function(event, context) {
 	    return acc;
 	}, {});
 
-// Assuming 'productConfig' contains the IDs to map
-const productConfig = body.productConfig;
+exports.handler = async function(event, context) {
+    if (event.httpMethod === "OPTIONS") {
+        return {
+            statusCode: 200,
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "Content-Type",
+                "Access-Control-Allow-Methods": "POST, OPTIONS"
+            },
+            body: JSON.stringify({message: "CORS preflight response"})
+        };
+    }
 
-// Directly map the option IDs to their values, excluding IDs and option titles
-const configValuesOnly = Object.entries(productConfig).reduce((acc, [key, value]) => {
-    // Look up the value directly in valueMappings
-    const valueTitle = valueMappings[value] || `Unknown Config: ${value}`; // Fallback to a message if not mapped
-    acc.push(valueTitle); // Add the value title to the accumulator array
-    return acc;
-}, []);
+    if (event.httpMethod === "POST") {
+        try {
+            const body = JSON.parse(event.body);
 
-// Concatenate all values into one string
-const configString = configValuesOnly.join('\n'); // Use '\n' for a new line between each value
+            // Ensure 'productConfig' is only declared once and used directly from 'body'
+            const configValuesOnly = Object.entries(body.productConfig).reduce((acc, [key, value]) => {
+                // Look up the value directly in valueMappings
+                const valueTitle = valueMappings[value] || `Unknown Config: ${value}`; // Use fallback if not mapped
+                acc.push(valueTitle); // Add the value title to the accumulator
+                return acc;
+            }, []);
 
-console.log("Concatenated Config String (Values Only):", configString);
+            // Concatenate all values into one string
+            const configString = configValuesOnly.join('\n'); // Use '\n' for a new line between each value
 
-// Update the body with the concatenated configuration string of values only
-body.configString = configString;
+            console.log("Concatenated Config String (Values Only):", configString);
+
+            // Update the body to include the concatenated configuration string of values only
+            body.configString = configString;
+
+            // Prepare the body for the fetch request
+            const response = await fetch('https://hooks.zapier.com/hooks/catch/6939704/3qzeaip/', {
+                method: 'POST',
+                body: JSON.stringify(body),
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return {
+                statusCode: 200,
+                headers: {
+                    "Access-Control-Allow-Origin": "*",
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ message: "Data processed successfully" })
+            };
+        } catch (error) {
+            return {
+                statusCode: 500,
+                headers: {
+                    "Access-Control-Allow-Origin": "*",
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ message: error.message })
+            };
+        }
+    }
+
+    // If not OPTIONS or POST, return Method Not Allowed
+    return {
+        statusCode: 405, // Method Not Allowed
+        headers: {
+            "Access-Control-Allow-Origin": "*"
+        },
+        body: JSON.stringify({message: "Method not allowed"})
+    };
+};
 
 
             // Log the original and mapped configurations here, after they are defined
