@@ -274,34 +274,6 @@ const valueMappings = {
 
 exports.handler = async function(event, context) {
     if (event.httpMethod === "OPTIONS") {
-        return {
-            statusCode: 200,
-            headers: {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Headers": "Content-Type",
-                "Access-Control-Allow-Methods": "POST, OPTIONS"
-            },
-            body: JSON.stringify({message: "CORS preflight response"})
-        };
-    }
-
-    if (event.httpMethod === "POST") {
-        try {
-            const body = JSON.parse(event.body);
-            // Assuming 'productConfig' contains the IDs to map
-            const productConfig = body.productConfig;
-            
-            // Map the option IDs to their readable titles
-		const mappedConfig = Object.entries(productConfig).reduce((acc, [key, value]) => {
-	    // Attempt to map both the key (for option title) and value (for option value)
-		    const optionTitle = optionMappings[key] || `Product Config ${key.charAt(0).toUpperCase() + 		key.slice(1)}`; // Fallback to a formatted key
-	    const valueTitle = valueMappings[value] || value; // Fallback to value if not mapped
-	    acc[optionTitle] = valueTitle;
-	    return acc;
-	}, {});
-
-exports.handler = async function(event, context) {
-    if (event.httpMethod === "OPTIONS") {
         // CORS preflight response
         return {
             statusCode: 200,
