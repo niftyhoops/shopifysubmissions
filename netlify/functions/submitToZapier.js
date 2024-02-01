@@ -300,15 +300,25 @@ exports.handler = async function(event, context) {
 	    return acc;
 	}, {});
 
-    const configString = Object.entries(mappedConfig).reduce((acc, [key, value]) => {
-        return acc + `${key}: ${value}\n`; // Use '\n' for a new line between each key-value pair
-    }, '');
+// Assuming 'productConfig' contains the IDs to map
+const productConfig = body.productConfig;
 
-    console.log("Concatenated Config String:", configString);
+// Directly map the option IDs to their values, excluding IDs and option titles
+const configValuesOnly = Object.entries(productConfig).reduce((acc, [key, value]) => {
+    // Look up the value directly in valueMappings
+    const valueTitle = valueMappings[value] || `Unknown Config: ${value}`; // Fallback to a message if not mapped
+    acc.push(valueTitle); // Add the value title to the accumulator array
+    return acc;
+}, []);
 
-    // Update the body with the concatenated configuration string
-    // Here you might choose to use a specific property to hold the string or replace the productConfig
-    body.configString = configString;
+// Concatenate all values into one string
+const configString = configValuesOnly.join('\n'); // Use '\n' for a new line between each value
+
+console.log("Concatenated Config String (Values Only):", configString);
+
+// Update the body with the concatenated configuration string of values only
+body.configString = configString;
+
 
             // Log the original and mapped configurations here, after they are defined
             console.log("Original productConfig:", productConfig);
