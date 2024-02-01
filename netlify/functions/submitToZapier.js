@@ -272,19 +272,6 @@ const valueMappings = {
 
 };
 
-const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
-
-// Example mappings (trimmed for brevity)
-const optionMappings = {
-    // Your optionMappings here...
-};
-
-const valueMappings = {
-    // Your valueMappings here...
-    // "v_4029681": "30x96 Gothic Hoophouse",
-    // Add other value mappings...
-};
-
 exports.handler = async function(event, context) {
     if (event.httpMethod === "OPTIONS") {
         return {
