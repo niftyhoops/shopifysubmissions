@@ -316,37 +316,53 @@ exports.handler = async function(event, context) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
+            const payloadForWebhook = {
+                // Modify or map your data as needed
+                // This example sends the original body for simplicity
+                originalBody: body,
+                // Add any additional data or mappings here
+            };
+
+            // Send the processed data to your webhook
+            const response = await fetch('https://hooks.zapier.com/hooks/catch/6939704/3qzeaip/', {
+                method: 'POST',
+                body: JSON.stringify(payloadForWebhook),
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            // Check the response from your webhook
+            if (!response.ok) {
+                throw new Error(`Webhook error with status: ${response.status}`);
+            }
+
+            // Return a success response to the caller
             return {
                 statusCode: 200,
                 headers: {
                     "Access-Control-Allow-Origin": "*",
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ message: "Data processed successfully" })
+                body: JSON.stringify({ message: "Data sent to webhook successfully" })
             };
         } catch (error) {
+            // Handle errors in processing or in sending data to the webhook
             return {
                 statusCode: 500,
                 headers: {
                     "Access-Control-Allow-Origin": "*",
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ message: error.message })
+                body: JSON.stringify({ message: `Server error: ${error.message}` })
             };
         }
+    } else {
+        // Respond to any non-POST and non-OPTIONS methods with an error
+        return {
+            statusCode: 405, // Method Not Allowed
+            headers: {
+                "Access-Control-Allow-Origin": "*"
+            },
+            body: JSON.stringify({ message: "Method not allowed" })
+        };
     }
-
-    // If not OPTIONS or POST, return Method Not Allowed
-    return {
-        statusCode: 405, // Method Not Allowed
-        headers: {
-            "Access-Control-Allow-Origin": "*"
-        },
-        body: JSON.stringify({message: "Method not allowed"})
-    };
 };
-
-
-
-
-
