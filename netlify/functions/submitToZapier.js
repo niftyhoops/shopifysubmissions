@@ -272,7 +272,10 @@ const valueMappings = {
 
 };
 
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+
 exports.handler = async function(event, context) {
+    // Handle CORS preflight requests
     if (event.httpMethod === "OPTIONS") {
         return {
             statusCode: 200,
@@ -281,46 +284,31 @@ exports.handler = async function(event, context) {
                 "Access-Control-Allow-Headers": "Content-Type",
                 "Access-Control-Allow-Methods": "POST, OPTIONS"
             },
-            body: JSON.stringify({message: "CORS preflight response"})
+            body: JSON.stringify({message: "CORS preflight accepted"})
         };
     }
 
+    // Process POST requests
     if (event.httpMethod === "POST") {
         try {
+            // Parse the incoming request body
             const body = JSON.parse(event.body);
 
-            // Ensure 'productConfig' is only declared once and used directly from 'body'
-            const configValuesOnly = Object.entries(body.productConfig).reduce((acc, [key, value]) => {
-                // Look up the value directly in valueMappings
-                const valueTitle = valueMappings[value] || `Unknown Config: ${value}`; // Use fallback if not mapped
-                acc.push(valueTitle); // Add the value title to the accumulator
-                return acc;
-            }, []);
-
-            // Concatenate all values into one string
-            const configString = configValuesOnly.join('\n'); // Use '\n' for a new line between each value
-
-            console.log("Concatenated Config String (Values Only):", configString);
-
-            // Update the body to include the concatenated configuration string of values only
-            body.configString = configString;
-
-            // Prepare the body for the fetch request
-            const response = await fetch('https://hooks.zapier.com/hooks/catch/6939704/3qzeaip/', {
-                method: 'POST',
-                body: JSON.stringify(body),
-                headers: { 'Content-Type': 'application/json' },
+            // Map the incoming request as needed
+            const configValuesOnly = Object.values(body.productConfig).map(value => {
+                // Assuming 'valueMappings' contains mappings for 'productConfig' values
+                // Replace 'valueMappings[value]' with your actual logic if different
+                return valueMappings[value] || `Unknown Config: ${value}`;
             });
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            // Prepare the string for the webhook
+            const configString = configValuesOnly.join('\n');
 
+            // Prepare the payload for the webhook
             const payloadForWebhook = {
-                // Modify or map your data as needed
-                // This example sends the original body for simplicity
-                originalBody: body,
-                // Add any additional data or mappings here
+                configString: configString,
+                // Include the entire body or any other information as needed
+                originalBody: body
             };
 
             // Send the processed data to your webhook
@@ -330,12 +318,12 @@ exports.handler = async function(event, context) {
                 headers: { 'Content-Type': 'application/json' },
             });
 
-            // Check the response from your webhook
+            // Check the response from the webhook
             if (!response.ok) {
                 throw new Error(`Webhook error with status: ${response.status}`);
             }
 
-            // Return a success response to the caller
+            // Return a success response
             return {
                 statusCode: 200,
                 headers: {
@@ -345,7 +333,7 @@ exports.handler = async function(event, context) {
                 body: JSON.stringify({ message: "Data sent to webhook successfully" })
             };
         } catch (error) {
-            // Handle errors in processing or in sending data to the webhook
+            // Handle any errors
             return {
                 statusCode: 500,
                 headers: {
@@ -356,13 +344,13 @@ exports.handler = async function(event, context) {
             };
         }
     } else {
-        // Respond to any non-POST and non-OPTIONS methods with an error
+        // Handle unsupported HTTP methods
         return {
-            statusCode: 405, // Method Not Allowed
+            statusCode: 405,
             headers: {
                 "Access-Control-Allow-Origin": "*"
             },
-            body: JSON.stringify({ message: "Method not allowed" })
+            body: JSON.stringify({message: "Method not allowed"})
         };
     }
 };
