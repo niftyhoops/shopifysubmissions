@@ -349,7 +349,6 @@ exports.handler = async function(event, context) {
 
 
 
-
             // Log the original and mapped configurations here, after they are defined
             console.log("Original productConfig:", productConfig);
             console.log("Mapped productConfig:", mappedConfig);
