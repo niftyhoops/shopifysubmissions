@@ -273,7 +273,6 @@ const valueMappings = {
 };
 
 exports.handler = async function(event, context) {
-    // Handle CORS preflight request
     if (event.httpMethod === "OPTIONS") {
         return {
             statusCode: 200,
@@ -286,45 +285,46 @@ exports.handler = async function(event, context) {
         };
     }
 
-    // Process POST request
     if (event.httpMethod === "POST") {
         try {
             const body = JSON.parse(event.body);
 
-            // Map productConfig values to readable descriptions
-            const configValuesOnly = Object.values(body.productConfig).map(value => {
-                return valueMappings[value] || `Unknown Config: ${value}`;
-            });
+            // Ensure 'productConfig' is only declared once and used directly from 'body'
+            const configValuesOnly = Object.entries(body.productConfig).reduce((acc, [key, value]) => {
+                // Look up the value directly in valueMappings
+                const valueTitle = valueMappings[value] || `Unknown Config: ${value}`; // Use fallback if not mapped
+                acc.push(valueTitle); // Add the value title to the accumulator
+                return acc;
+            }, []);
 
-            // Concatenate readable values into a single string
-            const configString = configValuesOnly.join('\n');
+            // Concatenate all values into one string
+            const configString = configValuesOnly.join('\n'); // Use '\n' for a new line between each value
 
-            // Prepare the payload for the fetch request
-            const responsePayload = { configString };
+            console.log("Concatenated Config String (Values Only):", configString);
 
-            // Perform the fetch operation within the async function
+            // Update the body to include the concatenated configuration string of values only
+            body.configString = configString;
+
+            // Prepare the body for the fetch request
             const response = await fetch('https://hooks.zapier.com/hooks/catch/6939704/3qzeaip/', {
                 method: 'POST',
-                body: JSON.stringify(responsePayload),
+                body: JSON.stringify(body),
                 headers: { 'Content-Type': 'application/json' },
             });
 
-            // Check response status
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            // Return success response
             return {
                 statusCode: 200,
                 headers: {
                     "Access-Control-Allow-Origin": "*",
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ message: "Data processed successfully", configString })
+                body: JSON.stringify({ message: "Data processed successfully" })
             };
         } catch (error) {
-            // Handle errors
             return {
                 statusCode: 500,
                 headers: {
@@ -334,17 +334,17 @@ exports.handler = async function(event, context) {
                 body: JSON.stringify({ message: error.message })
             };
         }
-    } else {
-        // Respond to unsupported HTTP methods
-        return {
-            statusCode: 405,
-            headers: {
-                "Access-Control-Allow-Origin": "*"
-            },
-            body: JSON.stringify({message: "Method not allowed"})
-        };
     }
 
+    // If not OPTIONS or POST, return Method Not Allowed
+    return {
+        statusCode: 405, // Method Not Allowed
+        headers: {
+            "Access-Control-Allow-Origin": "*"
+        },
+        body: JSON.stringify({message: "Method not allowed"})
+    };
+};
 
 
 
